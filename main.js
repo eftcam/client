@@ -40,10 +40,10 @@ app.setLoginItemSettings({
 	],
 })
 
-let domain = "eftcam.com"
+let DOMAIN = "eftcam.com"
 let URL = `https://eftcam.com`
 if (!app.isPackaged) {
-	domain = "localhost"
+	DOMAIN = "localhost"
 	URL = "http://localhost:3000"
 }
 
@@ -210,7 +210,7 @@ function createWindow() {
 						{
 							headers: {
 								cookie: cookies
-									.filter(({ domain: domain1 }) => domain1.includes(domain)) //  localhost cookies persist in prod
+									.filter(({ domain: domain1 }) => domain1.includes(DOMAIN)) //  localhost cookies persist in prod
 									.map(({ name, value }) => `${name}=${value}`)
 									.join("; "),
 							},
