@@ -1,0 +1,7 @@
+{
+    "semi": false,
+    "quoteProps": "consistent",
+    "jsxSingleQuote": false,
+    "useTabs": true,
+    "trailingComma": "es5"
+}
