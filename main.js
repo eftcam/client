@@ -128,13 +128,18 @@ function createWindow() {
 			win.webContents.send("fromMain", { type: "processing", id: rename })
 			try {
 				const length = store.get("clipopt").duration
-				const seconds = await getVideoDurationInSeconds(path)
+				const seconds = parseInt(await getVideoDurationInSeconds(path), 10)
 				console.log({ seconds, length })
 				// const commands = `-s hd720 -c:v libx264 -crf 22 -vf "scale=iw*sar:ih,setsar=1" -c:a aac -b:a 160k`
 				let patharr = path.split(".mp4")[0].split("\\")
 				let filename = patharr[patharr.length - 1]
 				filename = rename
 				const filepath = patharr.slice(0, patharr.length - 1)
+
+				let resolution = `hd720`
+				if (length >= 61) {
+					resolution = `hd1080`
+				}
 
 				await new Promise((resolve, reject) => {
 					ffmpeg(path)
@@ -149,7 +154,7 @@ function createWindow() {
 				await new Promise((resolve, reject) => {
 					ffmpeg(path)
 						.outputOptions(
-							`-s 1920x1080 -ss ${parseInt(
+							`-s ${resolution} -c:v libx264 -crf 22 -vf scale=iw*sar:ih,setsar=1 -c:a aac -b:a 160k -ss ${parseInt(
 								Math.max(0, seconds - length)
 							)} -t ${Math.min(seconds, length)}`.split(" ")
 						)
@@ -191,6 +196,11 @@ function createWindow() {
 							},
 						}
 					)
+
+					if (!res.ok) {
+						throw new Error(await res.text())
+					}
+
 					const { url, fields } = await res.json()
 					const formData = new FormData()
 
@@ -242,7 +252,7 @@ function createWindow() {
 			])
 		}
 		if (!store.get("clipopt")) {
-			store.set("clipopt", { duration: 60 })
+			store.set("clipopt", { duration: 30 })
 		}
 
 		let old_watch_close_fn
