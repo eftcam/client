@@ -48,6 +48,21 @@ if (!app.isPackaged) {
 const icon = __dirname + "/icon.png" // not sure if __dirname or .png fixed it, but ill take it
 let isQuiting
 let tray
+let is_nvidia
+exec("wmic path win32_VideoController get name", (error, stdout, stderr) => {
+	if (error) {
+		console.log(`error: ${error.message}`)
+		return
+	}
+	if (stderr) {
+		console.log(`stderr: ${stderr}`)
+		return
+	}
+	// Normalise the result here to get the GPU name
+	console.log(`stdout: ${stdout}`)
+
+	is_nvidia = stdout.toLowerCase().includes("NVIDIA".toLowerCase())
+})
 function createWindow() {
 	const width = app.isPackaged ? 800 : 1600 // dev tools take space
 	let win = new BrowserWindow({
@@ -184,6 +199,8 @@ function createWindow() {
 				async function upload_file(filepath, filename) {
 					const cookies = await session.defaultSession.cookies.get({})
 
+					console.log({ cookies })
+
 					const res = await fetch(
 						`${URL}/api/upload-url?duration=${seconds}&file=${encodeURIComponent(
 							filename
@@ -198,6 +215,7 @@ function createWindow() {
 					)
 
 					if (!res.ok) {
+						// await session.defaultSession.clearStorageData() // localhost cookies persist in prod
 						throw new Error(await res.text())
 					}
 
@@ -305,6 +323,12 @@ function createWindow() {
 			}
 
 			if (type === "watch") {
+				if (is_nvidia) {
+					win.webContents.send("fromMain", {
+						type: "gpu",
+						is_nvidia,
+					})
+				}
 				if (store.get("clipopt")) {
 					win.webContents.send("fromMain", {
 						type: "clipopt",
@@ -324,27 +348,6 @@ function createWindow() {
 
 			win.webContents.send("fromMain", "test123")
 		})
-
-		exec(
-			"wmic path win32_VideoController get name",
-			(error, stdout, stderr) => {
-				if (error) {
-					console.log(`error: ${error.message}`)
-					return
-				}
-				if (stderr) {
-					console.log(`stderr: ${stderr}`)
-					return
-				}
-				// Normalise the result here to get the GPU name
-				console.log(`stdout: ${stdout}`)
-
-				win.webContents.send("fromMain", {
-					type: "gpu",
-					is_nvidia: stdout.toLowerCase().includes("NVIDIA".toLowerCase()),
-				})
-			}
-		)
 	})
 
 	if (!app.isPackaged) win.webContents.openDevTools()
